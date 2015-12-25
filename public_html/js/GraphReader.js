@@ -83,16 +83,17 @@ $(document).ready(function () {
           sourceId = reactionId;
           targetId = speciesId;
         }
-        
+
         var edgeData = {
           source: sourceId,
           target: targetId
         };
-        
-        if(reversible){
+
+        if (reversible) {
           edgeData.sbclass = "two sided";
-        };
-        
+        }
+        ;
+
         cytoscapeJsEdges.push({
           data: edgeData
         });
@@ -125,13 +126,17 @@ $(function () { // on dom ready
     ready: function ()
     {
       window.cy = this;
+
+//      cy.panzoom({
+//      });
+
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
 
       cy.nodes('$node > node').ungrabify();
       cy.edges().unselectify();
     },
-    done: function(){
+    done: function () {
       console.log("done");
     },
     style: [
@@ -190,6 +195,9 @@ $(function () { // on dom ready
     elements: cytoscapeJsGraph,
     layout: {
       name: 'cose',
+//      idealEdgeLength: function(){
+//        return 50;
+//      }
 //      gravity: 100
 //      padding: 10
     }
