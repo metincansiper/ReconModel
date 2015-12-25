@@ -13,6 +13,10 @@ function loadXMLDoc(filename) {
 var cytoscapeJsGraph = {};
 var speciesIdToCompartmentIdMap = {};
 
+function truncateText(text, length) {
+  return text.substring(0, length - 1) + "..";
+}
+
 $(document).ready(function () {
   var xmlObject = loadXMLDoc("examples/GetReconGraphData.xml");
 
@@ -26,9 +30,11 @@ $(document).ready(function () {
     var compartmentId = $(this).attr('ID');
     cytoscapeJsNodes.push({
       data: {
-        id: compartmentId
-      },
-      locked: true
+        id: compartmentId,
+        name: ""
+      }
+//      ,
+//      locked: true
     });
 
     $(this).children("SpeciesAll").each(function () {
@@ -65,24 +71,30 @@ $(document).ready(function () {
             compartmentId = speciesIdToCompartmentIdMap[speciesId];
           }
         }
-        
+
         var sourceId;
         var targetId;
-        
-        if(roleId === 'Reactant'){
+
+        if (roleId === 'Reactant') {
           sourceId = speciesId;
           targetId = reactionId;
         }
-        else{
+        else {
           sourceId = reactionId;
           targetId = speciesId;
         }
         
+        var edgeData = {
+          source: sourceId,
+          target: targetId
+        };
+        
+        if(reversible){
+          edgeData.sbclass = "two sided";
+        };
+        
         cytoscapeJsEdges.push({
-          data: {
-            source: sourceId,
-            target: targetId
-          }
+          data: edgeData
         });
       });
     });
@@ -106,15 +118,29 @@ $(function () { // on dom ready
     container: document.getElementById('network-container'),
     hideEdgesOnViewport: true,
     hideLabelsOnViewport: true,
-    textureOnViewport: true,
+    textureOnViewport: false,
+    motionBlur: false,
     "background-repeat": "no-repeat",
     "background-clip": "none",
-    
+    ready: function ()
+    {
+      window.cy = this;
+      console.log(cy.nodes().length);
+      console.log(cy.edges().length);
+
+      cy.nodes('$node > node').ungrabify();
+      cy.edges().unselectify();
+    },
+    done: function(){
+      console.log("done");
+    },
     style: [
       {
         selector: 'node',
         css: {
-          'content': 'data(name)',
+          'content': function (ele) {
+            return truncateText(ele._private.data.name, 5);
+          },
           'text-valign': 'center',
           'text-halign': 'center'
         }
@@ -140,7 +166,15 @@ $(function () { // on dom ready
       {
         selector: 'edge',
         css: {
-          'curve-style': 'haystack'
+//          'curve-style': 'haystack',
+          'target-arrow-shape': 'triangle'
+        }
+      },
+      {
+        selector: 'edge[sbclass="two sided"]',
+        css: {
+          'target-arrow-shape': 'triangle',
+          'source-arrow-shape': 'triangle'
         }
       },
       {
@@ -155,11 +189,13 @@ $(function () { // on dom ready
     ],
     elements: cytoscapeJsGraph,
     layout: {
-      name: 'cose'
+      name: 'cose',
+//      gravity: 100
+//      padding: 10
     }
   });
-  
-  console.log(cy.nodes().length);
-  console.log(cy.edges().length);
+
+//  cy.nodes().grabify();
+//  cy.nodes('$node > node').ungrabify();
 });
 
