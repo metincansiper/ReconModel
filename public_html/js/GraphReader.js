@@ -130,8 +130,8 @@ $(function () { // on dom ready
       cy.elements().css('visibility', 'hidden');
 
       cy.panzoom({
-					// options here...
-				});
+        // options here...
+      });
 
 //      var container = $('#sbgn-network-container');
 //      var panProps = ({
@@ -266,6 +266,14 @@ $(function () { // on dom ready
     elements: cytoscapeJsGraph,
     layout: {
       name: 'cose',
+//      idealEdgeLength: function (ele) {
+//        return 50;
+//      },
+      nodeRepulsion: function (node) {
+        return 40000000;
+      },
+      // Node repulsion (overlapping) multiplier
+      nodeOverlap: 1,
 //      idealEdgeLength: function(){
 //        return 50;
 //      }
