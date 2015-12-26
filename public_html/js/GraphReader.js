@@ -18,6 +18,7 @@ function truncateText(text, length) {
 }
 
 $(document).ready(function () {
+
   var xmlObject = loadXMLDoc("examples/GetReconGraphData.xml");
 
   var cytoscapeJsNodes = [];
@@ -126,6 +127,7 @@ $(function () { // on dom ready
     ready: function ()
     {
       window.cy = this;
+      cy.elements().css('visibility', 'hidden');
 
 //      cy.panzoom({
 //      });
@@ -138,59 +140,120 @@ $(function () { // on dom ready
     },
     done: function () {
       console.log("done");
+//      var text = JSON.stringify(cy.json());
+      var nodes = cy.nodes();
+      var edges = cy.edges();
+      
+      var nodesData = [];
+      var edgesData = [];
+      var elementsData = {
+      };
+      
+      elementsData.nodes = nodesData;
+      elementsData.edges = edgesData;
+      
+      for(var i = 0; i < nodes.length; i++){
+        var node = nodes[i];
+        var data = {
+          id: node.id()
+        };
+        
+        if(node.data("parent") != null){
+          data.parent = node.data("parent");
+        }
+        
+        if(node.data("sbclass") != null){
+          data.sbclass = node.data("sbclass");
+        }
+        
+        var position = {
+          x: node.position("x"),
+          y: node.position("y")
+        };
+        
+        nodesData.push({
+          data: data,
+          position: position
+        });
+      }
+      
+      for(var i = 0; i < edges.length; i++){
+        var edge = edges[i];
+        var data = {
+          source: edge.data("source"),
+          target: edge.data("target")
+        };
+        
+        if(edge.data("sbclass") != null){
+          edge.sbclass = edge.data("sbclass");
+        }
+        
+        edgesData.push(data);
+      }
+
+      var text = JSON.stringify(elementsData);
+      cy.elements().remove();
+      cy.json(text);
+      
+      var blob = new Blob([text], {
+        type: "text/plain;charset=utf-8;",
+      });
+      saveAs(blob, "filename.txt");
+
+      console.log(text);
     },
     style: [
-      {
-        selector: 'node',
-        css: {
-          'content': function (ele) {
-            return truncateText(ele._private.data.name, 5);
-          },
-          'text-valign': 'center',
-          'text-halign': 'center'
-        }
-      },
-      {
-        selector: 'node[sbclass="reactant"]',
-        css: {
-          'shape': 'rectangle'
-        }
-      },
-      {
-        selector: '$node > node',
-        css: {
-          'padding-top': '10px',
-          'padding-left': '10px',
-          'padding-bottom': '10px',
-          'padding-right': '10px',
-          'text-valign': 'top',
-          'text-halign': 'center',
-          'background-color': '#bbb'
-        }
-      },
-      {
-        selector: 'edge',
-        css: {
-//          'curve-style': 'haystack',
-          'target-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: 'edge[sbclass="two sided"]',
-        css: {
-          'target-arrow-shape': 'triangle',
-          'source-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: ':selected',
-        css: {
-          'background-color': 'black',
-          'line-color': 'black',
-          'target-arrow-color': 'black',
-          'source-arrow-color': 'black'
-        }
-      }
+//      {
+//        selector: 'node',
+//        css: {
+//          'content': function (ele) {
+//            return truncateText(ele._private.data.name, 5);
+//          },
+//          'text-valign': 'center',
+//          'text-halign': 'center'
+//        }
+//      },
+//      {
+//        selector: 'node[sbclass="reactant"]',
+//        css: {
+//          'shape': 'rectangle'
+//        }
+//      },
+//      {
+//        selector: '$node > node',
+//        css: {
+//          'padding-top': '10px',
+//          'padding-left': '10px',
+//          'padding-bottom': '10px',
+//          'padding-right': '10px',
+//          'text-valign': 'top',
+//          'text-halign': 'center',
+//          'background-color': '#bbb'
+//        }
+//      },
+//      {
+//        selector: 'edge',
+//        css: {
+////          'curve-style': 'haystack',
+//          'target-arrow-shape': 'triangle'
+//        }
+//      },
+//      {
+//        selector: 'edge[sbclass="two sided"]',
+//        css: {
+//          'target-arrow-shape': 'triangle',
+//          'source-arrow-shape': 'triangle'
+//        }
+//      },
+//      {
+//        selector: ':selected',
+//        css: {
+//          'background-color': 'black',
+//          'line-color': 'black',
+//          'target-arrow-color': 'black',
+//          'source-arrow-color': 'black'
+//        }
+//      }
     ],
     elements: cytoscapeJsGraph,
     layout: {
