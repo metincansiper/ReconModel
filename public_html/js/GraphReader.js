@@ -10,23 +10,81 @@ function loadXMLDoc(filename) {
   return xhttp.responseXML;
 }
 ;
+var stop = function () {
+  console.log("done");
+  setTimeout(function () {
+    //do what you need here
+    var nodes = cy.nodes();
+    var edges = cy.edges();
+    var nodesData = [];
+    var edgesData = [];
+    var elementsData = {
+    };
+    elementsData.nodes = nodesData;
+    elementsData.edges = edgesData;
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var data = {
+        id: node.id(),
+        name: node.data('name')
+      };
+      if (node.data("parent") != null) {
+        data.parent = node.data("parent");
+      }
+
+      if (node.data("sbclass") != null) {
+        data.sbclass = node.data("sbclass");
+      }
+
+      var position = {
+        x: node.position("x"),
+        y: node.position("y")
+      };
+      nodesData.push({
+        data: data,
+        position: position
+      });
+    }
+
+    for (var i = 0; i < edges.length; i++) {
+      var edge = edges[i];
+      var data = {
+        source: edge.data("source"),
+        target: edge.data("target")
+      };
+      if (edge.data("sbclass") != null) {
+        edge.sbclass = edge.data("sbclass");
+      }
+
+      edgesData.push({data: data});
+    }
+
+    var text = JSON.stringify(elementsData);
+//      cy.elements().remove();
+//      cy.json(text);
+
+    var blob = new Blob([text], {
+      type: "text/plain;charset=utf-8;",
+    });
+    saveAs(blob, "network.txt");
+    console.log(text);
+  }, 10000);
+
+}
+
 var cytoscapeJsGraph = {};
 var speciesIdToCompartmentIdMap = {};
-
 function truncateText(text, length) {
   return text.substring(0, length - 1) + "..";
 }
 
 $(document).ready(function () {
 
-  var xmlObject = loadXMLDoc("examples/GetReconGraphData.xml");
-
+  var xmlObject = loadXMLDoc("examples/BigData.xml");
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
-
   cytoscapeJsGraph.nodes = cytoscapeJsNodes;
   cytoscapeJsGraph.edges = cytoscapeJsEdges;
-
   $(xmlObject).find("Compartments").children('Compartment').each(function () {
     var compartmentId = $(this).attr('ID');
     cytoscapeJsNodes.push({
@@ -37,14 +95,11 @@ $(document).ready(function () {
 //      ,
 //      locked: true
     });
-
     $(this).children("SpeciesAll").each(function () {
       $(this).children("Species").each(function () {
         var speciesId = $(this).attr('ID');
         var speciesName = $(this).attr('Name');
-
         speciesIdToCompartmentIdMap[speciesId] = compartmentId;
-
         cytoscapeJsNodes.push({
           data: {
             id: speciesId,
@@ -55,18 +110,15 @@ $(document).ready(function () {
       });
     });
   });
-
   $(xmlObject).find("Reactions").children('Reaction').each(function () {
     var reactionId = $(this).attr('ID');
     var reactionName = $(this).attr('Name');
     var reversible = $(this).attr('Reversible');
     var compartmentId;
-
     $(this).children("ReactionSpeciesAll").each(function () {
       $(this).children("ReactionSpecies").each(function () {
         var speciesId = $(this).attr('SpeciesId');
         var roleId = $(this).attr('RoleId');
-
         if (!compartmentId) {
           if (roleId === 'Reactant') {
             compartmentId = speciesIdToCompartmentIdMap[speciesId];
@@ -75,7 +127,6 @@ $(document).ready(function () {
 
         var sourceId;
         var targetId;
-
         if (roleId === 'Reactant') {
           sourceId = speciesId;
           targetId = reactionId;
@@ -89,18 +140,15 @@ $(document).ready(function () {
           source: sourceId,
           target: targetId
         };
-
         if (reversible) {
           edgeData.sbclass = "two sided";
         }
         ;
-
         cytoscapeJsEdges.push({
           data: edgeData
         });
       });
     });
-
     cytoscapeJsNodes.push({
       data: {
         id: reactionId,
@@ -111,12 +159,9 @@ $(document).ready(function () {
     });
   });
 });
-
-
-
 $(function () { // on dom ready
   document.getElementById('network-container');
-  var cy = cytoscape({
+  cytoscape({
     container: document.getElementById('network-container'),
     hideEdgesOnViewport: true,
     hideLabelsOnViewport: true,
@@ -127,12 +172,36 @@ $(function () { // on dom ready
     ready: function ()
     {
       window.cy = this;
-      cy.elements().css('visibility', 'hidden');
+      var layout = cy.makeLayout({
+        name: 'cose',
+        animate: false,
+//      idealEdgeLength: function (ele) {
+//        return 50;
+//      },
+        nodeRepulsion: function (node) {
+          return 400000000;
+        },
+        // Node repulsion (overlapping) multiplier
+        nodeOverlap: 0.01,
+//        useMultitasking: false
+//      nestingFactor: 0
+//      idealEdgeLength: function(){
+//        return 50;
+//      }
+//      gravity: 100
+//      padding: 10
+      });
+//      cy.elements().css('visibility', 'hidden');
+
+      layout.pon('layoutstop').then(function (event) {
+        stop();
+      });
+
+      layout.run();
 
       cy.panzoom({
         // options here...
       });
-
 //      var container = $('#sbgn-network-container');
 //      var panProps = ({
 //        fitPadding: 10
@@ -141,75 +210,76 @@ $(function () { // on dom ready
 
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
-
 //      cy.nodes('$node > node').ungrabify();
 //      cy.edges().unselectify();
     },
-    done: function () {
-      console.log("done");
-      cy.elements().css('visibility', 'visible');
-//      var text = JSON.stringify(cy.json());
-      var nodes = cy.nodes();
-      var edges = cy.edges();
-
-      var nodesData = [];
-      var edgesData = [];
-      var elementsData = {
-      };
-
-      elementsData.nodes = nodesData;
-      elementsData.edges = edgesData;
-
-      for (var i = 0; i < nodes.length; i++) {
-        var node = nodes[i];
-        var data = {
-          id: node.id()
-        };
-
-        if (node.data("parent") != null) {
-          data.parent = node.data("parent");
-        }
-
-        if (node.data("sbclass") != null) {
-          data.sbclass = node.data("sbclass");
-        }
-
-        var position = {
-          x: Math.round(node.position("x")),
-          y: Math.round(node.position("y"))
-        };
-
-        nodesData.push({
-          data: data,
-          position: position
-        });
-      }
-
-      for (var i = 0; i < edges.length; i++) {
-        var edge = edges[i];
-        var data = {
-          source: edge.data("source"),
-          target: edge.data("target")
-        };
-
-        if (edge.data("sbclass") != null) {
-          edge.sbclass = edge.data("sbclass");
-        }
-
-        edgesData.push(data);
-      }
-
-      var text = JSON.stringify(elementsData);
-//      cy.elements().remove();
-      cy.json(text);
-
-      var blob = new Blob([text], {
-        type: "text/plain;charset=utf-8;",
-      });
-      saveAs(blob, "network.txt");
-
-      console.log(text);
-    },
+//    done: function () {
+//      console.log("done");
+////      cy.elements().css('visibility', 'visible');
+////      var text = JSON.stringify(cy.json());
+//      var nodes = cy.nodes();
+//      var edges = cy.edges();
+//
+//      var nodesData = [];
+//      var edgesData = [];
+//      var elementsData = {
+//      };
+//
+//      elementsData.nodes = nodesData;
+//      elementsData.edges = edgesData;
+//
+//      for (var i = 0; i < nodes.length; i++) {
+//        var node = nodes[i];
+//        var data = {
+//          id: node.id(),
+//          name: node.data('name')
+//        };
+//
+//        if (node.data("parent") != null) {
+//          data.parent = node.data("parent");
+//        }
+//
+//        if (node.data("sbclass") != null) {
+//          data.sbclass = node.data("sbclass");
+//        }
+//
+//        var position = {
+//          x: node.position("x"),
+//          y: node.position("y")
+//        };
+//
+//        nodesData.push({
+//          data: data,
+//          position: position
+//        });
+//      }
+//
+//      for (var i = 0; i < edges.length; i++) {
+//        var edge = edges[i];
+//        
+//        var data = {
+//          source: edge.data("source"),
+//          target: edge.data("target")
+//        };
+//
+//        if (edge.data("sbclass") != null) {
+//          edge.sbclass = edge.data("sbclass");
+//        }
+//
+//        edgesData.push({data: data});
+//      }
+//
+//      var text = JSON.stringify(elementsData);
+////      cy.elements().remove();
+////      cy.json(text);
+//
+//      var blob = new Blob([text], {
+//        type: "text/plain;charset=utf-8;",
+//      });
+//      saveAs(blob, "network.txt");
+//
+//      console.log(text);
+//    },
     style: [
       {
         selector: 'node',
@@ -264,24 +334,7 @@ $(function () { // on dom ready
       }
     ],
     elements: cytoscapeJsGraph,
-    layout: {
-      name: 'cose',
-//      idealEdgeLength: function (ele) {
-//        return 50;
-//      },
-      nodeRepulsion: function (node) {
-        return 40000000;
-      },
-      // Node repulsion (overlapping) multiplier
-      nodeOverlap: 1,
-//      idealEdgeLength: function(){
-//        return 50;
-//      }
-//      gravity: 100
-//      padding: 10
-    }
   });
-
 //  cy.nodes().grabify();
 //  cy.nodes('$node > node').ungrabify();
 });
