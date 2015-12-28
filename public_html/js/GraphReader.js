@@ -10,10 +10,13 @@ function loadXMLDoc(filename) {
   return xhttp.responseXML;
 }
 ;
+
+//This function is to save the layout elements data with their final positions in json format
 var stop = function () {
   console.log("done");
+  //We need a little time out because Cytoscape.js calls the stop function 
+  //when the layout stops but before the final positions are set
   setTimeout(function () {
-    //do what you need here
     var nodes = cy.nodes();
     var edges = cy.edges();
     var nodesData = [];
@@ -60,13 +63,11 @@ var stop = function () {
     }
 
     var text = JSON.stringify(elementsData);
-//      cy.elements().remove();
-//      cy.json(text);
 
     var blob = new Blob([text], {
       type: "text/plain;charset=utf-8;",
     });
-    saveAs(blob, "network.txt");
+    saveAs(blob, "network.json");
     console.log(text);
   }, 10000);
 
@@ -80,11 +81,13 @@ function truncateText(text, length) {
 
 $(document).ready(function () {
 
-  var xmlObject = loadXMLDoc("examples/BigData.xml");
+  var xmlObject = loadXMLDoc("examples/GetReconGraphData.xml");
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
   cytoscapeJsGraph.nodes = cytoscapeJsNodes;
   cytoscapeJsGraph.edges = cytoscapeJsEdges;
+  
+  //Search in compartents
   $(xmlObject).find("Compartments").children('Compartment').each(function () {
     var compartmentId = $(this).attr('ID');
     cytoscapeJsNodes.push({
@@ -92,13 +95,14 @@ $(document).ready(function () {
         id: compartmentId,
         name: ""
       }
-//      ,
-//      locked: true
     });
+    
+    //Search in species of that compartment
     $(this).children("SpeciesAll").each(function () {
       $(this).children("Species").each(function () {
         var speciesId = $(this).attr('ID');
         var speciesName = $(this).attr('Name');
+        //Mark the compartment of that species
         speciesIdToCompartmentIdMap[speciesId] = compartmentId;
         cytoscapeJsNodes.push({
           data: {
@@ -110,17 +114,23 @@ $(document).ready(function () {
       });
     });
   });
+  
+  //Search in reactions of that compartment
   $(xmlObject).find("Reactions").children('Reaction').each(function () {
     var reactionId = $(this).attr('ID');
     var reactionName = $(this).attr('Name');
     var reversible = $(this).attr('Reversible');
     var compartmentId;
+    
+    //Get edge data by reaction species
     $(this).children("ReactionSpeciesAll").each(function () {
       $(this).children("ReactionSpecies").each(function () {
         var speciesId = $(this).attr('SpeciesId');
         var roleId = $(this).attr('RoleId');
+        //Reactions are in the same compartment with their input species
         if (!compartmentId) {
           if (roleId === 'Reactant') {
+            //Get the compartment of that species
             compartmentId = speciesIdToCompartmentIdMap[speciesId];
           }
         }
@@ -159,6 +169,8 @@ $(document).ready(function () {
     });
   });
 });
+
+//Create the cy network and perform to perform the layout and save the final positions
 $(function () { // on dom ready
   document.getElementById('network-container');
   cytoscape({
@@ -171,27 +183,26 @@ $(function () { // on dom ready
     "background-clip": "none",
     ready: function ()
     {
-      window.cy = this;
-      var layout = cy.makeLayout({
+      //Define the layout oprions
+      var options = {
         name: 'cose',
         animate: false,
-//      idealEdgeLength: function (ele) {
-//        return 50;
-//      },
-        nodeRepulsion: function (node) {
+        nestingFactor: 100
+      };
+
+      window.cy = this;
+
+      //If there is just one compartment then add some extra options
+      if (cy.nodes().orphans().length == 1) {
+        options.nodeRepulsion = function (node) {
           return 400000000;
-        },
-        // Node repulsion (overlapping) multiplier
-        nodeOverlap: 0.01,
-//        useMultitasking: false
-//      nestingFactor: 0
-//      idealEdgeLength: function(){
-//        return 50;
-//      }
-//      gravity: 100
-//      padding: 10
-      });
-//      cy.elements().css('visibility', 'hidden');
+        };
+
+        options.nodeOverlap = 0.01;
+      }
+
+      //perform the layout with the specified options
+      var layout = cy.makeLayout(options);
 
       layout.pon('layoutstop').then(function (event) {
         stop();
@@ -199,87 +210,11 @@ $(function () { // on dom ready
 
       layout.run();
 
+      //Enable panzoom
       cy.panzoom({
         // options here...
       });
-//      var container = $('#sbgn-network-container');
-//      var panProps = ({
-//        fitPadding: 10
-//      });
-//      container.cytoscapePanzoom(panProps);
-
-      console.log(cy.nodes().length);
-      console.log(cy.edges().length);
-//      cy.nodes('$node > node').ungrabify();
-//      cy.edges().unselectify();
     },
-//    done: function () {
-//      console.log("done");
-////      cy.elements().css('visibility', 'visible');
-////      var text = JSON.stringify(cy.json());
-//      var nodes = cy.nodes();
-//      var edges = cy.edges();
-//
-//      var nodesData = [];
-//      var edgesData = [];
-//      var elementsData = {
-//      };
-//
-//      elementsData.nodes = nodesData;
-//      elementsData.edges = edgesData;
-//
-//      for (var i = 0; i < nodes.length; i++) {
-//        var node = nodes[i];
-//        var data = {
-//          id: node.id(),
-//          name: node.data('name')
-//        };
-//
-//        if (node.data("parent") != null) {
-//          data.parent = node.data("parent");
-//        }
-//
-//        if (node.data("sbclass") != null) {
-//          data.sbclass = node.data("sbclass");
-//        }
-//
-//        var position = {
-//          x: node.position("x"),
-//          y: node.position("y")
-//        };
-//
-//        nodesData.push({
-//          data: data,
-//          position: position
-//        });
-//      }
-//
-//      for (var i = 0; i < edges.length; i++) {
-//        var edge = edges[i];
-//        
-//        var data = {
-//          source: edge.data("source"),
-//          target: edge.data("target")
-//        };
-//
-//        if (edge.data("sbclass") != null) {
-//          edge.sbclass = edge.data("sbclass");
-//        }
-//
-//        edgesData.push({data: data});
-//      }
-//
-//      var text = JSON.stringify(elementsData);
-////      cy.elements().remove();
-////      cy.json(text);
-//
-//      var blob = new Blob([text], {
-//        type: "text/plain;charset=utf-8;",
-//      });
-//      saveAs(blob, "network.txt");
-//
-//      console.log(text);
-//    },
     style: [
       {
         selector: 'node',
@@ -333,9 +268,8 @@ $(function () { // on dom ready
         }
       }
     ],
+    //Define the elements of cy graph
     elements: cytoscapeJsGraph,
   });
-//  cy.nodes().grabify();
-//  cy.nodes('$node > node').ungrabify();
 });
 

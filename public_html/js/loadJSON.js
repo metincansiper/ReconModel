@@ -25,7 +25,7 @@ $(document).ready(function () {
     }
     rawFile.send(null);
   }
-  readTextFile('examples/newjson.json');
+  readTextFile('examples/network2.json');
   cytoscapeJsGraph = eval("(" + text + ")");
 });
 
