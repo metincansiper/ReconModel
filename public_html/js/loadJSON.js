@@ -1,6 +1,7 @@
 function truncateText(text, length) {
   return text.substring(0, length - 1) + "..";
 }
+
 var cytoscapeJsGraph;
 
 $(document).ready(function () {
@@ -25,7 +26,7 @@ $(document).ready(function () {
     }
     rawFile.send(null);
   }
-  readTextFile('examples/network2.json');
+  readTextFile('examples/GetReconGraphData.json');
   cytoscapeJsGraph = eval("(" + text + ")");
 });
 

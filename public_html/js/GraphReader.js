@@ -1,3 +1,14 @@
+//List of model names to be handled
+var modelNames = ["GetReconGraphData", "BigData"];
+//Index of current model
+var currentModelIndex = 0;
+//Size of model names list
+var numberOfModels = modelNames.length;
+
+var getPathForModel = function(model){
+  return "examples/" + model + ".xml";
+};
+
 function loadXMLDoc(filename) {
   if (window.XMLHttpRequest) {
     xhttp = new XMLHttpRequest();
@@ -19,12 +30,16 @@ var stop = function () {
   setTimeout(function () {
     var nodes = cy.nodes();
     var edges = cy.edges();
+
     var nodesData = [];
     var edgesData = [];
+
+    //Elements data is the json formatted data to be passed to cytoscape.js instance as elements of the graph
     var elementsData = {
     };
     elementsData.nodes = nodesData;
     elementsData.edges = edgesData;
+
     for (var i = 0; i < nodes.length; i++) {
       var node = nodes[i];
       var data = {
@@ -67,26 +82,26 @@ var stop = function () {
     var blob = new Blob([text], {
       type: "text/plain;charset=utf-8;",
     });
-    saveAs(blob, "network.json");
+    
+    var jsonFileName = modelNames[currentModelIndex - 1] + ".json"; 
+    
+    saveAs(blob, jsonFileName);
     console.log(text);
+    processCurrentModel();
   }, 10000);
+ 
+};
 
-}
-
-var cytoscapeJsGraph = {};
-var speciesIdToCompartmentIdMap = {};
-function truncateText(text, length) {
-  return text.substring(0, length - 1) + "..";
-}
-
-$(document).ready(function () {
-
-  var xmlObject = loadXMLDoc("examples/GetReconGraphData.xml");
+var XMLToJSON = function (filename) {
+  var cytoscapeJsGraph = {};
+  var speciesIdToCompartmentIdMap = {};
+  var xmlObject = loadXMLDoc(filename);
+  
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
   cytoscapeJsGraph.nodes = cytoscapeJsNodes;
   cytoscapeJsGraph.edges = cytoscapeJsEdges;
-  
+
   //Search in compartents
   $(xmlObject).find("Compartments").children('Compartment').each(function () {
     var compartmentId = $(this).attr('ID');
@@ -96,7 +111,7 @@ $(document).ready(function () {
         name: ""
       }
     });
-    
+
     //Search in species of that compartment
     $(this).children("SpeciesAll").each(function () {
       $(this).children("Species").each(function () {
@@ -114,14 +129,14 @@ $(document).ready(function () {
       });
     });
   });
-  
+
   //Search in reactions of that compartment
   $(xmlObject).find("Reactions").children('Reaction').each(function () {
     var reactionId = $(this).attr('ID');
     var reactionName = $(this).attr('Name');
     var reversible = $(this).attr('Reversible');
     var compartmentId;
-    
+
     //Get edge data by reaction species
     $(this).children("ReactionSpeciesAll").each(function () {
       $(this).children("ReactionSpecies").each(function () {
@@ -168,10 +183,16 @@ $(document).ready(function () {
       }
     });
   });
-});
+  
+  return cytoscapeJsGraph;
+};
+
+function truncateText(text, length) {
+  return text.substring(0, length - 1) + "..";
+};
 
 //Create the cy network and perform to perform the layout and save the final positions
-$(function () { // on dom ready
+var initCyInstance = function (cytoscapeJsGraph) {
   document.getElementById('network-container');
   cytoscape({
     container: document.getElementById('network-container'),
@@ -183,7 +204,7 @@ $(function () { // on dom ready
     "background-clip": "none",
     ready: function ()
     {
-      //Define the layout oprions
+      //Define the layout options
       var options = {
         name: 'cose',
         animate: false,
@@ -271,5 +292,32 @@ $(function () { // on dom ready
     //Define the elements of cy graph
     elements: cytoscapeJsGraph,
   });
-});
+};
 
+//Processes the current model and mark it as processed
+var processCurrentModel = function(){
+  //Check if all models are already processed
+  if(currentModelIndex == numberOfModels){
+    return;
+  }
+  
+  console.log("processing the model named as " + modelNames[currentModelIndex]);
+  
+  //Process the current model
+  var path = getPathForModel(modelNames[currentModelIndex]);
+  var cytoscapeJsGraph = XMLToJSON(path);
+  initCyInstance(cytoscapeJsGraph);
+  
+  //Mark that the model ise processed
+  currentModelIndex = currentModelIndex + 1;
+};
+
+$(document).ready(function () {
+  //If there is no model in the list then return directly
+  if(numberOfModels == 0){
+    return;
+  }
+  
+  //Start with the first model
+  processCurrentModel();
+});
