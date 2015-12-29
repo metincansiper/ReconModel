@@ -5,10 +5,21 @@ var currentModelIndex = 0;
 //Size of model names list
 var numberOfModels = modelNames.length;
 
-var getPathForModel = function(model){
+//$.ajax({
+//  type: "POST",
+//  url: "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData",
+//  async: true,
+//  modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36",
+//  headers: {'Access-Control-Allow-Origin': '*'},
+//  crossDomain: true
+//})
+//    .then(function (content) {
+//      console.log("here");
+//    });
+
+var getPathForModel = function (model) {
   return "examples/" + model + ".xml";
 };
-
 function loadXMLDoc(filename) {
   if (window.XMLHttpRequest) {
     xhttp = new XMLHttpRequest();
@@ -82,21 +93,21 @@ var stop = function () {
     var blob = new Blob([text], {
       type: "text/plain;charset=utf-8;",
     });
-    
-    var jsonFileName = modelNames[currentModelIndex - 1] + ".json"; 
-    
+
+    var jsonFileName = modelNames[currentModelIndex - 1] + ".json";
+
     saveAs(blob, jsonFileName);
     console.log(text);
     processCurrentModel();
   }, 10000);
- 
+
 };
 
 var XMLToJSON = function (filename) {
   var cytoscapeJsGraph = {};
   var speciesIdToCompartmentIdMap = {};
   var xmlObject = loadXMLDoc(filename);
-  
+
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
   cytoscapeJsGraph.nodes = cytoscapeJsNodes;
@@ -183,13 +194,14 @@ var XMLToJSON = function (filename) {
       }
     });
   });
-  
+
   return cytoscapeJsGraph;
 };
 
 function truncateText(text, length) {
   return text.substring(0, length - 1) + "..";
-};
+}
+;
 
 //Create the cy network and perform to perform the layout and save the final positions
 var initCyInstance = function (cytoscapeJsGraph) {
@@ -295,29 +307,29 @@ var initCyInstance = function (cytoscapeJsGraph) {
 };
 
 //Processes the current model and mark it as processed
-var processCurrentModel = function(){
+var processCurrentModel = function () {
   //Check if all models are already processed
-  if(currentModelIndex == numberOfModels){
+  if (currentModelIndex == numberOfModels) {
     return;
   }
-  
+
   console.log("processing the model named as " + modelNames[currentModelIndex]);
-  
+
   //Process the current model
   var path = getPathForModel(modelNames[currentModelIndex]);
   var cytoscapeJsGraph = XMLToJSON(path);
   initCyInstance(cytoscapeJsGraph);
-  
+
   //Mark that the model ise processed
   currentModelIndex = currentModelIndex + 1;
 };
 
 $(document).ready(function () {
   //If there is no model in the list then return directly
-  if(numberOfModels == 0){
+  if (numberOfModels == 0) {
     return;
   }
-  
+
   //Start with the first model
   processCurrentModel();
 });
