@@ -10,6 +10,18 @@ $(document).ready(function () {
 //    cytoscapeJsGraph = data;
 //  });
 
+//  $.ajax({
+//    type: "POST",
+//    url: "php/queryAllModels.php",
+//    async: true,
+//    error: function(){
+//      console.log("error");
+//    }
+//  })
+//          .then(function (content) {
+//            console.log(content);
+//          });
+
   $.ajax({
     type: "POST",
     url: "php/queryGraph.php",

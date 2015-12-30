@@ -1,5 +1,9 @@
 //List of model names to be handled
 var modelNames = ["GetReconGraphData", "BigData"];
+
+var modelIDs = ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
+modelNames = modelIDs;
+
 //Index of current model
 var currentModelIndex = 0;
 //Size of model names list
@@ -32,6 +36,28 @@ function loadXMLDoc(filename) {
   return xhttp.responseXML;
 }
 ;
+
+var getXML = function (modelID) {
+  var result;
+  $.ajax({
+    type: "POST",
+    url: "php/queryGraph.php",
+    async: false,
+    data: {
+      modelID: modelID
+    }
+  })
+          .then(function (content) {
+            content = content.replace(/&lt;/g, "<");
+            content = content.replace(/&gt;/g, ">");
+            content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
+            content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
+            content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
+            console.log(content);
+            result = $.parseXML(content);
+          });
+  return result;
+};
 
 //This function is to save the layout elements data with their final positions in json format
 var stop = function () {
@@ -103,10 +129,10 @@ var stop = function () {
 
 };
 
-var XMLToJSON = function (filename) {
+var XMLToJSON = function (xmlObject) {
   var cytoscapeJsGraph = {};
   var speciesIdToCompartmentIdMap = {};
-  var xmlObject = loadXMLDoc(filename);
+//  var xmlObject = loadXMLDoc(filename);
 
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
@@ -316,8 +342,11 @@ var processCurrentModel = function () {
   console.log("processing the model named as " + modelNames[currentModelIndex]);
 
   //Process the current model
-  var path = getPathForModel(modelNames[currentModelIndex]);
-  var cytoscapeJsGraph = XMLToJSON(path);
+//  var path = getPathForModel(modelNames[currentModelIndex]);
+//  var cytoscapeJsGraph = XMLToJSON(path);
+
+  var xmlObject = getXML(modelNames[currentModelIndex]);
+  var cytoscapeJsGraph = XMLToJSON(xmlObject);
   initCyInstance(cytoscapeJsGraph);
 
   //Mark that the model ise processed
