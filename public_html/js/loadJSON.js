@@ -19,6 +19,8 @@ $(document).ready(function () {
     }
   })
           .then(function (content) {
+            content = content.replace(/&lt;/g, "<");
+            content = content.replace(/&gt;/g, ">");
             console.log(content);
           });
 
