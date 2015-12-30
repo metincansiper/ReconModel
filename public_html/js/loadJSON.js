@@ -10,6 +10,18 @@ $(document).ready(function () {
 //    cytoscapeJsGraph = data;
 //  });
 
+  $.ajax({
+    type: "POST",
+    url: "php/queryGraph.php",
+    async: true,
+    data: {
+      modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"
+    }
+  })
+          .then(function (content) {
+            console.log(content);
+          });
+
   function readTextFile(file)
   {
     var rawFile = new XMLHttpRequest();
@@ -29,9 +41,6 @@ $(document).ready(function () {
   readTextFile('examples/GetReconGraphData.json');
   cytoscapeJsGraph = eval("(" + text + ")");
 });
-
-
-
 $(function () { // on dom ready
   cytoscape({
     container: document.getElementById('network-container'),
@@ -44,14 +53,11 @@ $(function () { // on dom ready
     ready: function ()
     {
       window.cy = this;
-
       cy.panzoom({
         // options here...
       });
-      
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
-
 //      cy.layout({
 //        name: 'preset'
 //      });
