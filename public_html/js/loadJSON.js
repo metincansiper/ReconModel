@@ -1,6 +1,7 @@
 var modelIDs = [];
 var modelNames = [];
 var cytoscapeJsGraph;
+var currentModelID;
 
 function truncateText(text, length) {
   return text.substring(0, length - 1) + "..";
@@ -56,13 +57,18 @@ var initCyInstance = function () {
             return truncateText(ele._private.data.name, 5);
           },
           'text-valign': 'center',
-          'text-halign': 'center'
+          'text-halign': 'center',
+          'background-color': 'yellow'
         }
       },
       {
         selector: 'node[sbclass="reactant"]',
         css: {
-          'shape': 'rectangle'
+          'shape': 'rectangle',
+          'background-color': 'white',
+          'border-width': '3px',
+          'border-color': 'blue',
+          'color': 'blue'
         }
       },
       {
@@ -74,9 +80,11 @@ var initCyInstance = function () {
           'padding-right': '10px',
           'text-valign': 'top',
           'text-halign': 'center',
+          'font-size': '300px',
           'background-color': 'white',
           'border-width': '3px',
-          'border-color': 'black'
+          'border-color': 'black',
+          'content': 'data(name)'
         }
       },
       {
@@ -160,6 +168,7 @@ var fillModelSelectors = function(){
   $(".model-selector").click(function (e) {
     var selectorId = $(this).attr('id');
     var modelId = getModelIdBySelector(selectorId);
+    currentModelID = modelId;
     loadJSON(modelId);
     initCyInstance();
   });
@@ -169,6 +178,7 @@ var fillModelSelectors = function(){
 $(document).ready(function () {
   getModelIDAndNames();
   fillModelSelectors();
+  currentModelID = modelIDs[0];
   loadJSON(modelIDs[0]);
   initCyInstance();
 });

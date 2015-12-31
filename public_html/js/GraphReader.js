@@ -113,7 +113,7 @@ var stop = function () {
     var jsonFileName = modelIDs[currentModelIndex - 1] + ".json";
 
     saveAs(blob, jsonFileName);
-    console.log(text);
+//    console.log(text);
     processCurrentModel();
   }, 10000);
 
