@@ -1,61 +1,31 @@
+var modelIDs = [];
+var modelNames = [];
+var cytoscapeJsGraph;
+
 function truncateText(text, length) {
   return text.substring(0, length - 1) + "..";
 }
 
-var cytoscapeJsGraph;
-
-$(document).ready(function () {
+function readTextFile(file)
+{
   var text;
-//  $.getJSON("examples/network.json", function (data) {
-//    cytoscapeJsGraph = data;
-//  });
-
-  $.ajax({
-    type: "POST",
-    url: "php/queryAllModels.php",
-    async: false,
-    error: function(){
-      console.log("error");
-    }
-  })
-          .then(function (content) {
-            console.log(content);
-          });
-
-//  $.ajax({
-//    type: "POST",
-//    url: "php/queryGraph.php",
-//    async: false,
-//    data: {
-//      modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"
-//    }
-//  })
-//          .then(function (content) {
-//            content = content.replace(/&lt;/g, "<");
-//            content = content.replace(/&gt;/g, ">");
-//            console.log(content);
-//          });
-
-  function readTextFile(file)
+  var rawFile = new XMLHttpRequest();
+  rawFile.open("GET", file, false);
+  rawFile.onreadystatechange = function ()
   {
-    var rawFile = new XMLHttpRequest();
-    rawFile.open("GET", file, false);
-    rawFile.onreadystatechange = function ()
+    if (rawFile.readyState === 4)
     {
-      if (rawFile.readyState === 4)
+      if (rawFile.status === 200 || rawFile.status == 0)
       {
-        if (rawFile.status === 200 || rawFile.status == 0)
-        {
-          text = rawFile.responseText;
-        }
+        text = rawFile.responseText;
       }
     }
-    rawFile.send(null);
-  }
-  readTextFile('examples/GetReconGraphData.json');
-  cytoscapeJsGraph = eval("(" + text + ")");
-});
-$(function () { // on dom ready
+  };
+  rawFile.send(null);
+  return text;
+}
+
+var initCyInstance = function () {
   cytoscape({
     container: document.getElementById('network-container'),
     hideEdgesOnViewport: true,
@@ -104,7 +74,9 @@ $(function () { // on dom ready
           'padding-right': '10px',
           'text-valign': 'top',
           'text-halign': 'center',
-          'background-color': '#bbb'
+          'background-color': 'white',
+          'border-width': '3px',
+          'border-color': 'black'
         }
       },
       {
@@ -136,5 +108,67 @@ $(function () { // on dom ready
       name: 'preset'
     }
   });
-});
+};
 
+var getModelIDAndNames = function () {
+  $.ajax({
+    type: "GET",
+    url: "models.csv",
+    dataType: "text",
+    async: false,
+    success: function (allText) {
+      var allTextLines = allText.split(/\r\n|\n/);
+
+      for (var i = 0; i < allTextLines.length; i++) {
+        var data = allTextLines[i].split(',');
+        modelIDs.push(data[0]);
+        modelNames.push(data[1]);
+      }
+    }
+  });
+};
+
+var getFilePath = function(fileName){
+  return "cy_jsons/" + fileName + ".json"; 
+};
+
+var loadJSON = function(filename){
+  var path = getFilePath(filename);
+  var text;
+  text = readTextFile(path);
+  cytoscapeJsGraph = eval("(" + text + ")");
+};
+
+var getModelSelector = function(modelId){
+  return modelId + "_selector";
+};
+
+var getModelIdBySelector = function(selector){
+  return selector.replace('_selector', '');
+};
+
+var fillModelSelectors = function(){
+  var length = modelIDs.length;
+  for(var i = 0; i < length; i++){
+    var modelId = modelIDs[i];
+    var modelName = modelNames[i];
+    var modelSelector = getModelSelector(modelId);
+    var content = "<a href='#' class='model-selector' id='" + modelSelector + "'>" + modelName + "</a><br>";
+    $("#model-selectors").append(content);
+  }
+  
+  $(".model-selector").click(function (e) {
+    var selectorId = $(this).attr('id');
+    var modelId = getModelIdBySelector(selectorId);
+    loadJSON(modelId);
+    initCyInstance();
+  });
+};
+
+
+$(document).ready(function () {
+  getModelIDAndNames();
+  fillModelSelectors();
+  loadJSON(modelIDs[0]);
+  initCyInstance();
+});
