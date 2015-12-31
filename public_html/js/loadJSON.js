@@ -10,31 +10,31 @@ $(document).ready(function () {
 //    cytoscapeJsGraph = data;
 //  });
 
-//  $.ajax({
-//    type: "POST",
-//    url: "php/queryAllModels.php",
-//    async: true,
-//    error: function(){
-//      console.log("error");
-//    }
-//  })
-//          .then(function (content) {
-//            console.log(content);
-//          });
-
   $.ajax({
     type: "POST",
-    url: "php/queryGraph.php",
-    async: true,
-    data: {
-      modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"
+    url: "php/queryAllModels.php",
+    async: false,
+    error: function(){
+      console.log("error");
     }
   })
           .then(function (content) {
-            content = content.replace(/&lt;/g, "<");
-            content = content.replace(/&gt;/g, ">");
             console.log(content);
           });
+
+//  $.ajax({
+//    type: "POST",
+//    url: "php/queryGraph.php",
+//    async: false,
+//    data: {
+//      modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"
+//    }
+//  })
+//          .then(function (content) {
+//            content = content.replace(/&lt;/g, "<");
+//            content = content.replace(/&gt;/g, ">");
+//            console.log(content);
+//          });
 
   function readTextFile(file)
   {

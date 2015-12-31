@@ -1,5 +1,4 @@
 <?php
-
 //Biogene url
 $url = "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetAllModels";
 

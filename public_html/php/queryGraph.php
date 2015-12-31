@@ -1,5 +1,5 @@
 <?php
-
+ini_set('max_execution_time', 500);
 //Biogene url
 $url = "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData";
 

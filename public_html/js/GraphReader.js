@@ -1,41 +1,31 @@
 //List of model names to be handled
-var modelNames = ["GetReconGraphData", "BigData"];
-
-var modelIDs = ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
-modelNames = modelIDs;
+var modelIDs = [];
+    //= ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
 
 //Index of current model
 var currentModelIndex = 0;
 //Size of model names list
-var numberOfModels = modelNames.length;
+var numberOfModels;
+    //= modelIDs.length;
 
-//$.ajax({
-//  type: "POST",
-//  url: "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData",
-//  async: true,
-//  modelID: "bbd9dba1-ea10-40b8-9df7-69e5d08f9b36",
-//  headers: {'Access-Control-Allow-Origin': '*'},
-//  crossDomain: true
-//})
-//    .then(function (content) {
-//      console.log("here");
-//    });
+var getModelIDs = function () {
+  $.ajax({
+    type: "GET",
+    url: "models.csv",
+    dataType: "text",
+    async: false,
+    success: function (allText) {
+      var allTextLines = allText.split(/\r\n|\n/);
 
-var getPathForModel = function (model) {
-  return "examples/" + model + ".xml";
+      for (var i = 0; i < allTextLines.length; i++) {
+        var data = allTextLines[i].split(',');
+        modelIDs.push(data[0]);
+      }
+      
+      numberOfModels = modelIDs.length;
+    }
+  });
 };
-function loadXMLDoc(filename) {
-  if (window.XMLHttpRequest) {
-    xhttp = new XMLHttpRequest();
-  }
-  else {
-    xhttp = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xhttp.open("GET", filename, false);
-  xhttp.send();
-  return xhttp.responseXML;
-}
-;
 
 var getXML = function (modelID) {
   var result;
@@ -47,15 +37,15 @@ var getXML = function (modelID) {
       modelID: modelID
     }
   })
-          .then(function (content) {
-            content = content.replace(/&lt;/g, "<");
-            content = content.replace(/&gt;/g, ">");
-            content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
-            content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
-            content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
-            console.log(content);
-            result = $.parseXML(content);
-          });
+      .then(function (content) {
+        content = content.replace(/&lt;/g, "<");
+        content = content.replace(/&gt;/g, ">");
+        content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
+        content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
+        content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
+//        console.log(content);
+        result = $.parseXML(content);
+      });
   return result;
 };
 
@@ -120,7 +110,7 @@ var stop = function () {
       type: "text/plain;charset=utf-8;",
     });
 
-    var jsonFileName = modelNames[currentModelIndex - 1] + ".json";
+    var jsonFileName = modelIDs[currentModelIndex - 1] + ".json";
 
     saveAs(blob, jsonFileName);
     console.log(text);
@@ -132,7 +122,6 @@ var stop = function () {
 var XMLToJSON = function (xmlObject) {
   var cytoscapeJsGraph = {};
   var speciesIdToCompartmentIdMap = {};
-//  var xmlObject = loadXMLDoc(filename);
 
   var cytoscapeJsNodes = [];
   var cytoscapeJsEdges = [];
@@ -142,10 +131,11 @@ var XMLToJSON = function (xmlObject) {
   //Search in compartents
   $(xmlObject).find("Compartments").children('Compartment').each(function () {
     var compartmentId = $(this).attr('ID');
+    var compartmentName = $(this).attr('Name');
     cytoscapeJsNodes.push({
       data: {
         id: compartmentId,
-        name: ""
+        name: compartmentName
       }
     });
 
@@ -339,13 +329,13 @@ var processCurrentModel = function () {
     return;
   }
 
-  console.log("processing the model named as " + modelNames[currentModelIndex]);
+  console.log("processing the model named as " + modelIDs[currentModelIndex]);
 
   //Process the current model
-//  var path = getPathForModel(modelNames[currentModelIndex]);
+//  var path = getPathForModel(modelIDs[currentModelIndex]);
 //  var cytoscapeJsGraph = XMLToJSON(path);
 
-  var xmlObject = getXML(modelNames[currentModelIndex]);
+  var xmlObject = getXML(modelIDs[currentModelIndex]);
   var cytoscapeJsGraph = XMLToJSON(xmlObject);
   initCyInstance(cytoscapeJsGraph);
 
@@ -354,6 +344,8 @@ var processCurrentModel = function () {
 };
 
 $(document).ready(function () {
+  getModelIDs();
+  
   //If there is no model in the list then return directly
   if (numberOfModels == 0) {
     return;
