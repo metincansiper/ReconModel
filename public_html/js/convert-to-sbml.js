@@ -1,7 +1,7 @@
 var convertToSBML = function (modelID) {
-  var compartments = cy.nodes('$node > node');
-  var reactions = cy.nodes('[sbclass="reactant"]');
-  var species = cy.nodes().nonorphans('[^sbgnclass]');
+  var compartments = cy.nodes('[sbclass="compartment"]');
+  var reactions = cy.nodes('[sbclass="reaction"]');
+  var species = cy.nodes('[sbclass="species"]');
 
   var sbmlText = "";
   sbmlText = sbmlText + '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -14,7 +14,7 @@ var convertToSBML = function (modelID) {
   for (var i = 0; i < compartments.length; i++) {
     var compartment = compartments[i];
     sbmlText = sbmlText + '<compartment id="' + compartment.id()
-            + '" outside="' + compartment.data('name') + '"/>\n';
+            + '" outside="' + compartment.data('parent') + '"/>\n';
   }
 
   sbmlText = sbmlText + '</listOfCompartments>\n';
@@ -88,7 +88,9 @@ var convertToSBML = function (modelID) {
     sbmlText = sbmlText + '</reaction>\n';
   }
 
-  sbmlText = sbmlText + '</listOfReactions>';
+  sbmlText = sbmlText + '</listOfReactions>\n';
+  sbmlText = sbmlText + '</model>\n';
+  sbmlText = sbmlText + '</sbml>';
   return sbmlText;
 };
 
