@@ -1,7 +1,7 @@
 var convertToSBML = function (modelID) {
   var compartments = cy.nodes('$node > node');
   var reactions = cy.nodes('[sbclass="reactant"]');
-  var species = cy.nodes.nonorphans('[^sbgnclass]');
+  var species = cy.nodes().nonorphans('[^sbgnclass]');
 
   var sbmlText = "";
   sbmlText = sbmlText + '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -70,16 +70,16 @@ var convertToSBML = function (modelID) {
     sbmlText = sbmlText + '<listOfReactants>\n';
     
     //Add reactants data
-    for(var i = 0; i < reactantEdges.length; i++){
-      var reactantEdge = reactantEdges[i];
+    for(var j = 0; j < reactantEdges.length; j++){
+      var reactantEdge = reactantEdges[j];
       sbmlText = sbmlText + '<speciesReference species="' + reactantEdge.data('source')
               + '"/>';
     }
     
     //Add products data
-    for(var i = 0; i < productEdges.length; i++){
-      var productEdge = productEdges[i];
-      sbmlText = sbmlText + '<speciesReference species="' + productEdge.data('source')
+    for(var j = 0; j < productEdges.length; j++){
+      var productEdge = productEdges[j];
+      sbmlText = sbmlText + '<speciesReference species="' + productEdge.data('target')
               + '"/>';
     }
     
@@ -89,6 +89,7 @@ var convertToSBML = function (modelID) {
   }
 
   sbmlText = sbmlText + '</listOfReactions>';
+  return sbmlText;
 };
 
 

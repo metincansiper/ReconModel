@@ -136,35 +136,50 @@ var getModelIDAndNames = function () {
   });
 };
 
-var getFilePath = function(fileName){
-  return "cy_jsons/" + fileName + ".json"; 
+var getFilePath = function (fileName) {
+  return "cy_jsons/" + fileName + ".json";
 };
 
-var loadJSON = function(filename){
+var loadJSON = function (filename) {
   var path = getFilePath(filename);
   var text;
   text = readTextFile(path);
   cytoscapeJsGraph = eval("(" + text + ")");
 };
 
-var getModelSelector = function(modelId){
+var getModelSelector = function (modelId) {
   return modelId + "_selector";
 };
 
-var getModelIdBySelector = function(selector){
+var getModelIdBySelector = function (selector) {
   return selector.replace('_selector', '');
 };
 
-var fillModelSelectors = function(){
+var fillModelSelectors = function () {
   var length = modelIDs.length;
-  for(var i = 0; i < length; i++){
+  var content;
+  content = "<button id='export-to-sbml'>Export to Sbml</button><br>";
+  $("#model-selectors").append(content);
+  for (var i = 0; i < length; i++) {
     var modelId = modelIDs[i];
     var modelName = modelNames[i];
     var modelSelector = getModelSelector(modelId);
-    var content = "<a href='#' class='model-selector' id='" + modelSelector + "'>" + modelName + "</a><br>";
+    content = "<a href='#' class='model-selector' id='" + modelSelector + "'>" + modelName + "</a><br>";
     $("#model-selectors").append(content);
   }
-  
+
+  $("#export-to-sbml").click(function (e) {
+    var sbmlText = convertToSBML(currentModelID);
+
+    var blob = new Blob([sbmlText], {
+      type: "text/plain;charset=utf-8;",
+    });
+
+    var sbmlFileName = currentModelID + ".sbml";
+
+    saveAs(blob, sbmlFileName);
+  });
+
   $(".model-selector").click(function (e) {
     var selectorId = $(this).attr('id');
     var modelId = getModelIdBySelector(selectorId);
