@@ -41,6 +41,7 @@ var initCyInstance = function () {
       cy.panzoom({
         // options here...
       });
+
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
 //      cy.layout({
@@ -57,12 +58,17 @@ var initCyInstance = function () {
             return truncateText(ele._private.data.name, 5);
           },
           'text-valign': 'center',
-          'text-halign': 'center',
+          'text-halign': 'center'
+        }
+      },
+      {
+        selector: 'node[sbclass="species"]',
+        css: {
           'background-color': 'yellow'
         }
       },
       {
-        selector: 'node[sbclass="reactant"]',
+        selector: 'node[sbclass="reaction"]',
         css: {
           'shape': 'rectangle',
           'background-color': 'white',
@@ -72,7 +78,7 @@ var initCyInstance = function () {
         }
       },
       {
-        selector: '$node > node',
+        selector: 'node[sbclass="compartment"]',
         css: {
           'padding-top': '10px',
           'padding-left': '10px',
@@ -114,6 +120,24 @@ var initCyInstance = function () {
     elements: cytoscapeJsGraph,
     layout: {
       name: 'preset'
+    }
+  });
+
+  // just use the regular qtip api but on cy elements
+  cy.elements().qtip({
+    content: function () {
+      return this.data('name');
+    },
+    position: {
+      my: 'top center',
+      at: 'bottom center'
+    },
+    style: {
+      classes: 'qtip-bootstrap',
+      tip: {
+        width: 16,
+        height: 8
+      }
     }
   });
 };

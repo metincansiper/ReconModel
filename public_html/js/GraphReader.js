@@ -1,17 +1,17 @@
 //List of model names to be handled
 var modelIDs = [];
-    //= ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
+//= ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
 
 //Index of current model
 var currentModelIndex = 0;
 //Size of model names list
 var numberOfModels;
-    //= modelIDs.length;
+//= modelIDs.length;
 
 var getModelIDs = function () {
   $.ajax({
     type: "GET",
-    url: "models.csv",
+    url: "models_1.csv",
     dataType: "text",
     async: false,
     success: function (allText) {
@@ -21,7 +21,7 @@ var getModelIDs = function () {
         var data = allTextLines[i].split(',');
         modelIDs.push(data[0]);
       }
-      
+
       numberOfModels = modelIDs.length;
     }
   });
@@ -69,10 +69,13 @@ var stop = function () {
 
     for (var i = 0; i < nodes.length; i++) {
       var node = nodes[i];
+      //create node data
       var data = {
         id: node.id(),
-        name: node.data('name')
+        name: node.data('name'),
+        sbmlId: node.data('sbmlId')
       };
+      
       if (node.data("parent") != null) {
         data.parent = node.data("parent");
       }
@@ -80,11 +83,35 @@ var stop = function () {
       if (node.data("sbclass") != null) {
         data.sbclass = node.data("sbclass");
       }
+      
+      if(node.data("sbclass") == 'reaction'){
+        data.reversible = node.data('reversible');
+        data.kineticLawId = node.data('kineticLawId');
+        data.fast = node.data('fast');
+      }
+      else if(node.data("sbclass") == 'species'){
+        data.typeId = node.data('typeId');
+        data.initialAmount = node.data('initialAmount');
+        data.initialConcentration = node.data('initialConcentration');
+        data.substanceUnitsId = node.data('substanceUnitsId');
+        data.hasOnlySubstanceUnits = node.data('hasOnlySubstanceUnits');
+        data.boundaryCondition = node.data('boundaryCondition');
+        data.charge = node.data('charge');
+        data.constant = node.data('constant');
+        data.isCommon = node.data('isCommon');
+      }
+      else if(node.data("sbclass") == 'compartment'){
+        data.size = node.data('size');
+        data.spatialDimensions = node.data('spatialDimensions');
+        data.typeId = node.data('typeId');
+      }
 
+      //define node position
       var position = {
         x: node.position("x"),
         y: node.position("y")
       };
+      
       nodesData.push({
         data: data,
         position: position
@@ -94,9 +121,12 @@ var stop = function () {
     for (var i = 0; i < edges.length; i++) {
       var edge = edges[i];
       var data = {
+        id: edge.data("id"),
         source: edge.data("source"),
-        target: edge.data("target")
+        target: edge.data("target"),
+        stoichiometry: edge.data("stoichiometry")
       };
+      
       if (edge.data("sbclass") != null) {
         edge.sbclass = edge.data("sbclass");
       }
@@ -132,11 +162,29 @@ var XMLToJSON = function (xmlObject) {
   $(xmlObject).find("Compartments").children('Compartment').each(function () {
     var compartmentId = $(this).attr('ID');
     var compartmentName = $(this).attr('Name');
+    var parentId = $(this).attr('Outside');
+    var compartmentSBMLId = $(this).attr('sbmlID');
+    var compartmentSize = $(this).attr('Size');
+    var compartmentSpatialDimensions = $(this).attr('SpatialDimensions');
+    var compartmentConstant = $(this).attr('Constant');
+    var compartmentTypeId = $(this).attr('CompartmentTypeId');
+
+    var compartmentData = {
+      id: compartmentId,
+      name: compartmentName,
+      sbclass: 'compartment',
+      sbmlId: compartmentSBMLId,
+      size: compartmentSize,
+      spatialDimensions: compartmentSpatialDimensions,
+      typeId: compartmentTypeId
+    };
+
+    if (parentId != "00000000-0000-0000-0000-000000000000") {
+      compartmentData.parent = parentId;
+    }
+
     cytoscapeJsNodes.push({
-      data: {
-        id: compartmentId,
-        name: compartmentName
-      }
+      data: compartmentData
     });
 
     //Search in species of that compartment
@@ -144,13 +192,34 @@ var XMLToJSON = function (xmlObject) {
       $(this).children("Species").each(function () {
         var speciesId = $(this).attr('ID');
         var speciesName = $(this).attr('Name');
+        var speciesSBMLId = $(this).attr('sbmlID');
+        var speciesTypeId = $(this).attr('SpeciesTypeId');
+        var speciesInitialAmount = $(this).attr('InitialAmount');
+        var speciesInitialConcentration = $(this).attr('InitialConcentration');
+        var speciesSubstanceUnitsId = $(this).attr('SubstanceUnitsId');
+        var speciesHasOnlySubstanceUnits = $(this).attr('HasOnlySubstanceUnits');
+        var speciesBoundaryCondition = $(this).attr('BoundaryCondition');
+        var speciesCharge = $(this).attr('Charge');
+        var speciesConstant = $(this).attr('Constant');
+        var speciesIsCommon = $(this).attr('IsCommon');
         //Mark the compartment of that species
         speciesIdToCompartmentIdMap[speciesId] = compartmentId;
         cytoscapeJsNodes.push({
           data: {
             id: speciesId,
             parent: compartmentId,
-            name: speciesName
+            name: speciesName,
+            sbclass: 'species',
+            sbmlId: speciesSBMLId,
+            typeId: speciesTypeId,
+            initialAmount: speciesInitialAmount,
+            initialConcentration: speciesInitialConcentration,
+            substanceUnitsId: speciesSubstanceUnitsId,
+            hasOnlySubstanceUnits: speciesHasOnlySubstanceUnits,
+            boundaryCondition: speciesBoundaryCondition,
+            charge: speciesCharge,
+            constant: speciesConstant,
+            isCommon: speciesIsCommon
           }
         });
       });
@@ -162,6 +231,9 @@ var XMLToJSON = function (xmlObject) {
     var reactionId = $(this).attr('ID');
     var reactionName = $(this).attr('Name');
     var reversible = $(this).attr('Reversible');
+    var reactionSBMLId = $(this).attr('sbmlId');
+    var reactionKineticLawId = $(this).attr('KineticLawId');
+    var reactionFast = $(this).attr('Fast');
     var compartmentId;
 
     //Get edge data by reaction species
@@ -169,6 +241,8 @@ var XMLToJSON = function (xmlObject) {
       $(this).children("ReactionSpecies").each(function () {
         var speciesId = $(this).attr('SpeciesId');
         var roleId = $(this).attr('RoleId');
+        var edgeId = $(this).attr('ID');
+        var stoichiometry = $(this).attr('Stoichiometry');
         //Reactions are in the same compartment with their input species
         if (!compartmentId) {
           if (roleId === 'Reactant') {
@@ -189,9 +263,12 @@ var XMLToJSON = function (xmlObject) {
         }
 
         var edgeData = {
+          id: edgeId,
           source: sourceId,
-          target: targetId
+          target: targetId,
+          stoichiometry: stoichiometry
         };
+        
         if (reversible) {
           edgeData.sbclass = "two sided";
         }
@@ -204,9 +281,13 @@ var XMLToJSON = function (xmlObject) {
     cytoscapeJsNodes.push({
       data: {
         id: reactionId,
-        sbclass: 'reactant',
+        sbclass: 'reaction',
         parent: compartmentId,
-        name: reactionName
+        name: reactionName,
+        reversible: reversible,
+        sbmlId: reactionSBMLId,
+        kineticLawId: reactionKineticLawId,
+        fast: reactionFast
       }
     });
   });
@@ -272,13 +353,18 @@ var initCyInstance = function (cytoscapeJsGraph) {
             return truncateText(ele._private.data.name, 5);
           },
           'text-valign': 'center',
-          'text-halign': 'center'
+          'text-halign': 'center',
+          'background-color': 'yellow'
         }
       },
       {
-        selector: 'node[sbclass="reactant"]',
+        selector: 'node[sbclass="reaction"]',
         css: {
-          'shape': 'rectangle'
+          'shape': 'rectangle',
+          'background-color': 'white',
+          'border-width': '3px',
+          'border-color': 'blue',
+          'color': 'blue'
         }
       },
       {
@@ -290,7 +376,11 @@ var initCyInstance = function (cytoscapeJsGraph) {
           'padding-right': '10px',
           'text-valign': 'top',
           'text-halign': 'center',
-          'background-color': '#bbb'
+          'font-size': '300px',
+          'background-color': 'white',
+          'border-width': '3px',
+          'border-color': 'black',
+          'content': 'data(name)'
         }
       },
       {
@@ -345,7 +435,7 @@ var processCurrentModel = function () {
 
 $(document).ready(function () {
   getModelIDs();
-  
+
   //If there is no model in the list then return directly
   if (numberOfModels == 0) {
     return;
