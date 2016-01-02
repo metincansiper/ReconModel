@@ -126,7 +126,7 @@ var stop = function () {
       };
       
       if (edge.data("sbclass") != null) {
-        edge.sbclass = edge.data("sbclass");
+        data.sbclass = edge.data("sbclass");
       }
 
       edgesData.push({data: data});
@@ -267,7 +267,7 @@ var XMLToJSON = function (xmlObject) {
           stoichiometry: stoichiometry
         };
         
-        if (reversible) {
+        if (reversible === 'True') {
           edgeData.sbclass = "two sided";
         }
         ;
