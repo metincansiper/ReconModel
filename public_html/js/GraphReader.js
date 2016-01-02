@@ -1,13 +1,11 @@
-//List of model names to be handled
+//List of model ids to be handled
 var modelIDs = [];
-//= ["bbd9dba1-ea10-40b8-9df7-69e5d08f9b36"];
-
 //Index of current model
 var currentModelIndex = 0;
-//Size of model names list
+//Number of models
 var numberOfModels;
-//= modelIDs.length;
 
+//Fill the model id's map
 var getModelIDs = function () {
   $.ajax({
     type: "GET",
@@ -295,11 +293,6 @@ var XMLToJSON = function (xmlObject) {
   return cytoscapeJsGraph;
 };
 
-function truncateText(text, length) {
-  return text.substring(0, length - 1) + "..";
-}
-;
-
 //Create the cy network and perform to perform the layout and save the final positions
 var initCyInstance = function (cytoscapeJsGraph) {
   document.getElementById('network-container');
@@ -345,68 +338,7 @@ var initCyInstance = function (cytoscapeJsGraph) {
         // options here...
       });
     },
-    style: [
-      {
-        selector: 'node',
-        css: {
-          'content': function (ele) {
-            return truncateText(ele._private.data.name, 5);
-          },
-          'text-valign': 'center',
-          'text-halign': 'center',
-          'background-color': 'yellow'
-        }
-      },
-      {
-        selector: 'node[sbclass="reaction"]',
-        css: {
-          'shape': 'rectangle',
-          'background-color': 'white',
-          'border-width': '3px',
-          'border-color': 'blue',
-          'color': 'blue'
-        }
-      },
-      {
-        selector: '$node > node',
-        css: {
-          'padding-top': '10px',
-          'padding-left': '10px',
-          'padding-bottom': '10px',
-          'padding-right': '10px',
-          'text-valign': 'top',
-          'text-halign': 'center',
-          'font-size': '300px',
-          'background-color': 'white',
-          'border-width': '3px',
-          'border-color': 'black',
-          'content': 'data(name)'
-        }
-      },
-      {
-        selector: 'edge',
-        css: {
-//          'curve-style': 'haystack',
-          'target-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: 'edge[sbclass="two sided"]',
-        css: {
-          'target-arrow-shape': 'triangle',
-          'source-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: ':selected',
-        css: {
-          'background-color': 'black',
-          'line-color': 'black',
-          'target-arrow-color': 'black',
-          'source-arrow-color': 'black'
-        }
-      }
-    ],
+    style: commonUtilities.cyStyle,
     //Define the elements of cy graph
     elements: cytoscapeJsGraph,
   });

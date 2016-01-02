@@ -1,12 +1,17 @@
+//variables
+//List of model id's to be handled
 var modelIDs = [];
+//List of model names to be handled
 var modelNames = [];
+//List of sbml id's to be handled
+var sbmlIDs = [];
+//Cytoscape.js graph to be loaded
 var cytoscapeJsGraph;
-var currentModelID;
+//Index of current model
+var currentIndex;
 
-function truncateText(text, length) {
-  return text.substring(0, length - 1) + "..";
-}
-
+//functions
+//simply reads from a text file
 function readTextFile(file)
 {
   var text;
@@ -26,6 +31,7 @@ function readTextFile(file)
   return text;
 }
 
+//Initilizes the cy instance
 var initCyInstance = function () {
   cytoscape({
     container: document.getElementById('network-container'),
@@ -44,86 +50,17 @@ var initCyInstance = function () {
 
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
-//      cy.layout({
-//        name: 'preset'
-//      });
     },
     done: function () {
     },
-    style: [
-      {
-        selector: 'node',
-        css: {
-          'content': function (ele) {
-            return truncateText(ele._private.data.name, 5);
-          },
-          'text-valign': 'center',
-          'text-halign': 'center'
-        }
-      },
-      {
-        selector: 'node[sbclass="species"]',
-        css: {
-          'background-color': 'yellow'
-        }
-      },
-      {
-        selector: 'node[sbclass="reaction"]',
-        css: {
-          'shape': 'rectangle',
-          'background-color': 'white',
-          'border-width': '3px',
-          'border-color': 'blue',
-          'color': 'blue'
-        }
-      },
-      {
-        selector: 'node[sbclass="compartment"]',
-        css: {
-          'padding-top': '10px',
-          'padding-left': '10px',
-          'padding-bottom': '10px',
-          'padding-right': '10px',
-          'text-valign': 'top',
-          'text-halign': 'center',
-          'font-size': '300px',
-          'background-color': 'white',
-          'border-width': '3px',
-          'border-color': 'black',
-          'content': 'data(name)'
-        }
-      },
-      {
-        selector: 'edge',
-        css: {
-//          'curve-style': 'haystack',
-          'target-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: 'edge[sbclass="two sided"]',
-        css: {
-          'target-arrow-shape': 'triangle',
-          'source-arrow-shape': 'triangle'
-        }
-      },
-      {
-        selector: ':selected',
-        css: {
-          'background-color': 'black',
-          'line-color': 'black',
-          'target-arrow-color': 'black',
-          'source-arrow-color': 'black'
-        }
-      }
-    ],
+    style: commonUtilities.cyStyle,
     elements: cytoscapeJsGraph,
     layout: {
       name: 'preset'
     }
   });
 
-  // just use the regular qtip api but on cy elements
+  // add a qtip function
   cy.elements().qtip({
     content: function () {
       return this.data('name');
@@ -142,6 +79,7 @@ var initCyInstance = function () {
   });
 };
 
+//Fill the model id's names and sbml id's
 var getModelIDAndNames = function () {
   $.ajax({
     type: "GET",
@@ -155,15 +93,18 @@ var getModelIDAndNames = function () {
         var data = allTextLines[i].split(',');
         modelIDs.push(data[0]);
         modelNames.push(data[1]);
+        sbmlIDs.push(data[2]);
       }
     }
   });
 };
 
+//create the file path by the filename
 var getFilePath = function (fileName) {
   return "cy_jsons/" + fileName + ".json";
 };
 
+//Load the specified json file
 var loadJSON = function (filename) {
   var path = getFilePath(filename);
   var text;
@@ -171,19 +112,25 @@ var loadJSON = function (filename) {
   cytoscapeJsGraph = eval("(" + text + ")");
 };
 
+//create a selector by the modelId
 var getModelSelector = function (modelId) {
   return modelId + "_selector";
 };
 
+//retrieve the model id by the selector
 var getModelIdBySelector = function (selector) {
   return selector.replace('_selector', '');
 };
 
-var fillModelSelectors = function () {
+//Append model selectors to the html
+var fillSelectorsDiv = function () {
   var length = modelIDs.length;
   var content;
   content = "<button id='export-to-sbml'>Export to Sbml</button><br>";
-  $("#model-selectors").append(content);
+  $("#bottom-div").append(content);
+  
+  $("#selected-model-name").text(modelNames[0]);
+  
   for (var i = 0; i < length; i++) {
     var modelId = modelIDs[i];
     var modelName = modelNames[i];
@@ -193,31 +140,35 @@ var fillModelSelectors = function () {
   }
 
   $("#export-to-sbml").click(function (e) {
-    var sbmlText = convertToSBML(currentModelID);
+    var sbmlText = convertToSBML(sbmlIDs[currentIndex]);
 
     var blob = new Blob([sbmlText], {
       type: "text/plain;charset=utf-8;",
     });
 
-    var sbmlFileName = currentModelID + ".sbml";
+    var sbmlFileName = modelIDs[currentIndex] + ".sbml";
 
     saveAs(blob, sbmlFileName);
   });
 
+  //On click change the current model
   $(".model-selector").click(function (e) {
     var selectorId = $(this).attr('id');
     var modelId = getModelIdBySelector(selectorId);
-    currentModelID = modelId;
+    currentIndex = modelIDs.indexOf(modelId);
+    
+    $("#selected-model-name").text(modelNames[currentIndex]);
+    
     loadJSON(modelId);
     initCyInstance();
   });
 };
 
-
+//On document ready
 $(document).ready(function () {
   getModelIDAndNames();
-  fillModelSelectors();
-  currentModelID = modelIDs[0];
+  fillSelectorsDiv();
+  currentIndex = 0;
   loadJSON(modelIDs[0]);
   initCyInstance();
 });

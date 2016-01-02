@@ -13,7 +13,13 @@ and open the template in the editor.
         <link href="lib/css/jquery.qtip.min.css" rel="stylesheet">
     </head>
     <body>
+        
         <table>
+            <tr>
+                <td colspan="2">
+                    <div align="center" id="top-div" style="border: 1px solid #ddd;"><h2 id="selected-model-name"></h2></div>
+                </td>
+            </tr>
             <tr>
                 <td>
                     <div id="model-selectors" style="overflow: auto;width: 500px;height: 500px;border: 1px solid #ddd;">
@@ -25,6 +31,7 @@ and open the template in the editor.
                 </td>
             </tr>
         </table>
+        <div id="bottom-div"></div>
         <script src="lib/js/jquery-1.8.2.min.js"></script>
         
         
@@ -34,7 +41,7 @@ and open the template in the editor.
         <script src="lib/js/cytoscape-cose-bilkent.js"></script>
         <script src="lib/js/FileSaver.js"></script>
         <script src="lib/js/cytoscape.js-panzoom.js"></script>
-        <!--<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-spread/1.0.4/cytoscape-spread.js"></script>-->
+        <script src="js/common-utilities.js"></script>
         <!--<script src="js/GraphReader.js"></script>-->
         <script src="js/convert-to-sbml.js"></script>
         <script src="js/loadJSON.js"></script>
