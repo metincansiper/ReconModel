@@ -41,7 +41,7 @@ var commonUtilities = {
         'text-halign': 'center',
         'font-size': '300px',
         'background-color': 'white',
-        'border-width': '3px',
+        'border-width': '10px',
         'border-color': 'black',
         'content': 'data(name)'
       }
