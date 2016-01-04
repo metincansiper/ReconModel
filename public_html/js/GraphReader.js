@@ -143,7 +143,7 @@ var stop = function () {
     saveAs(blob, jsonFileName);
 //    console.log(text);
     processCurrentModel();
-  }, 20000);
+  }, 60000);
 
 };
 
