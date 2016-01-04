@@ -37,7 +37,7 @@ var initCyInstance = function () {
     container: document.getElementById('network-container'),
     hideEdgesOnViewport: true,
     hideLabelsOnViewport: true,
-    textureOnViewport: false,
+    textureOnViewport: true,
     motionBlur: false,
     "background-repeat": "no-repeat",
     "background-clip": "none",
