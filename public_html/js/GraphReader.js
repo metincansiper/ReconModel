@@ -50,9 +50,11 @@ var getXML = function (modelID) {
 //This function is to save the layout elements data with their final positions in json format
 var stop = function () {
   console.log("done");
-  //We need a little time out because Cytoscape.js calls the stop function 
-  //when the layout stops but before the final positions are set
-  setTimeout(function () {
+  //Previously we need a little time out because Cytoscape.js calls the stop function 
+  //when the layout stops but before the final positions are set.
+  //However, this bug must be solved and I removed that timeout. TODO check if there is a problem
+  //with this before running this script.
+//  setTimeout(function () {
     var nodes = cy.nodes();
     var edges = cy.edges();
 
@@ -143,7 +145,7 @@ var stop = function () {
     saveAs(blob, jsonFileName);
 //    console.log(text);
     processCurrentModel();
-  }, 70000);
+//  }, 70000);
 
 };
 
