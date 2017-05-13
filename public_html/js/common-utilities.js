@@ -5,7 +5,7 @@ var commonUtilities = {
   },
   cyStyle: [
     {
-      selector: 'node',
+      selector: 'node[name]',
       css: {
         'content': function (ele) {
           return commonUtilities.truncateText(ele._private.data.name, 5);
