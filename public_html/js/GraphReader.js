@@ -5,6 +5,84 @@ var currentModelIndex = 0;
 //Number of models
 var numberOfModels;
 
+window.extraLayout = function() {
+  var nodes = cy.nodes(':orphan').children().children(':parent');
+  cy.startBatch();
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    cy.add({
+      group: 'nodes',
+      data: {
+       id: 'dummy_' + node.id()
+      },
+      css: {
+        width: node.width(),
+        height: node.height()
+      },
+      classes: 'dummy'
+    });
+  }
+  cy.endBatch();
+  var afterLayout = function() {
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var nodePos = node.position();
+      var newPos = dummies.filter('#dummy_' + node.id()).position();
+      var posDiff = {
+        x: newPos.x - nodePos.x,
+        y: newPos.y - nodePos.y
+      };
+
+      moveNodes(posDiff, node);
+    }
+
+    dummies.remove();
+    stop();
+  };
+  var dummies = cy.nodes('.dummy');
+  dummies.layout({name: 'grid', stop: afterLayout});
+};
+
+function moveNodes(positionDiff, nodes) {
+  // Get the descendants of top most nodes. Note that node.position() can move just the simple nodes.
+  var topMostNodes = getTopMostNodes(nodes);
+  var nodesToMove = topMostNodes.union(topMostNodes.descendants());
+
+  nodesToMove.positions(function(node, i) {
+      if(typeof node === "number") {
+        node = i;
+      }
+      var oldX = node.position("x");
+      var oldY = node.position("y");
+      return {
+          x: oldX + positionDiff.x,
+          y: oldY + positionDiff.y
+      };
+  });
+}
+
+function getTopMostNodes(nodes) {
+    var nodesMap = {};
+    for (var i = 0; i < nodes.length; i++) {
+        nodesMap[nodes[i].id()] = true;
+    }
+    var roots = nodes.filter(function (ele, i) {
+        if(typeof ele === "number") {
+          ele = i;
+        }
+        var parent = ele.parent()[0];
+        while(parent != null){
+            if(nodesMap[parent.id()]){
+                return false;
+            }
+            parent = parent.parent()[0];
+        }
+        return true;
+    });
+
+    return roots;
+}
+
 //Fill the model id's map
 var getModelIDs = function () {
   $.ajax({
@@ -330,7 +408,8 @@ var initCyInstance = function (cytoscapeJsGraph) {
       var layout = cy.makeLayout(options);
 
       layout.pon('layoutstop').then(function (event) {
-        stop();
+        extraLayout();
+//        stop();
       });
 
       layout.run();
