@@ -1,7 +1,8 @@
 <?php
 ini_set('max_execution_time', 500);
 //Biogene url
-$url = "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData";
+//$url = "http://nashua.case.edu/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData";
+$url = "http://ciceklab.cs.bilkent.edu.tr/PathCaseRECONService/PathwaysService.asmx?op=GetReconGraphData";
 
 //Biogene query parameters
 $modelID = urlencode($_POST["modelID"]);
