@@ -6,7 +6,21 @@ var currentModelIndex = 0;
 var numberOfModels;
 
 window.extraLayout = function() {
-  var nodes = cy.nodes(':orphan').children().children(':parent');
+  var nodes = cy.nodes(':orphan');
+  
+  // Search for the nodes on which we should perform the extra layout
+  // start with the orphans
+  while (nodes.length > 0) {
+    var parents = nodes.filter(':parent');
+    // If more then one parent on a level we are done
+    if (parents.length > 1) {
+      // Found the level set nodes to parents and break
+      nodes = parents;
+      break;
+    }
+    nodes = nodes.children(); // Search in the next level
+  }
+  
   cy.startBatch();
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
@@ -87,7 +101,7 @@ function getTopMostNodes(nodes) {
 var getModelIDs = function () {
   $.ajax({
     type: "GET",
-    url: "models.csv",
+    url: "models_1.csv",
     dataType: "text",
     async: false,
     success: function (allText) {
@@ -111,17 +125,30 @@ var getXML = function (modelID) {
     async: false,
     data: {
       modelID: modelID
-    }
-  })
-      .then(function (content) {
-        content = content.replace(/&lt;/g, "<");
-        content = content.replace(/&gt;/g, ">");
-        content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
-        content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
-        content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
+    },
+    success: function (content) {
+      console.log('success');
+      content = content.replace(/&lt;/g, "<");
+      content = content.replace(/&gt;/g, ">");
+      content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
+      content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
+      content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
 //        console.log(content);
-        result = $.parseXML(content);
-      });
+      result = $.parseXML(content);
+    },
+    error: function (content) {
+      console.log('error');
+    }
+  });
+//      .then(function (content) {
+//        content = content.replace(/&lt;/g, "<");
+//        content = content.replace(/&gt;/g, ">");
+//        content = content.replace('<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetReconGraphDataResponse xmlns="http://nashua.cwru.edu/PathwaysService/"><GetReconGraphDataResult><?xml version="1.0" encoding="utf-16"?>', '');
+//        content = content.replace('</GetReconGraphDataResult></GetReconGraphDataResponse></soap:Body></soap:Envelope>', '')
+//        content = content.replace('<?xml version="1.0" encoding="utf-8"?>', '');
+////        console.log(content);
+//        result = $.parseXML(content);
+//      });
   return result;
 };
 
