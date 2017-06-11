@@ -101,7 +101,7 @@ function getTopMostNodes(nodes) {
 var getModelIDs = function () {
   $.ajax({
     type: "GET",
-    url: "models_1.csv",
+    url: "models.csv",
     dataType: "text",
     async: false,
     success: function (allText) {
