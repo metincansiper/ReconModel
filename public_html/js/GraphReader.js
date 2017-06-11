@@ -421,6 +421,10 @@ var initCyInstance = function (cytoscapeJsGraph) {
       };
 
       window.cy = this;
+      
+      if (cy.nodes().length == 0) {
+        console.log(modelIDs[currentModelIndex] + " is empty");
+      }
 
       //If there is just one compartment then add some extra options
       if (cy.nodes().orphans().length == 1) {
