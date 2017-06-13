@@ -10,6 +10,8 @@ var cytoscapeJsGraph;
 //Index of current model
 var currentIndex;
 
+var getScreenShots = false; // If true gets screen shots of all graphs
+
 //functions
 //simply reads from a text file
 function readTextFile(file)
@@ -33,6 +35,22 @@ function readTextFile(file)
 
 //Initilizes the cy instance
 var initCyInstance = function () {
+  if (window.cy) {
+    cy.elements().remove();
+    cy.add(cytoscapeJsGraph);
+    cy.fit();
+    
+    if (getScreenShots) {
+      saveAsJpg(modelNames[currentIndex] + '.jpg');
+      currentIndex++;
+      if (currentIndex < modelIDs.length) {
+        loadJSON(modelIDs[currentIndex]);
+        initCyInstance();
+      }
+    }
+    
+    return;
+  }
   cytoscape({
     container: document.getElementById('network-container'),
     hideEdgesOnViewport: true,
@@ -47,6 +65,15 @@ var initCyInstance = function () {
       cy.panzoom({
         // options here...
       });
+
+      if (getScreenShots) {
+        saveAsJpg(modelNames[currentIndex] + '.jpg');
+        currentIndex++;
+        if (currentIndex < modelIDs.length) {
+          loadJSON(modelIDs[currentIndex]);
+          initCyInstance();
+        }
+      }
 
       console.log(cy.nodes().length);
       console.log(cy.edges().length);
@@ -83,7 +110,7 @@ var initCyInstance = function () {
 var getModelIDAndNames = function () {
   $.ajax({
     type: "GET",
-    url: "models.csv",
+    url: "models_1.csv",
     dataType: "text",
     async: false,
     success: function (allText) {
@@ -172,6 +199,44 @@ $(document).ready(function () {
   loadJSON(modelIDs[0]);
   initCyInstance();
 });
+
+var saveAsJpg = function(filename) {
+  console.log('get jpg');
+  var jpgContent = cy.jpg();
+  
+  console.log('get base 64 data');
+  // this is to remove the beginning of the pngContent: data:img/png;base64,
+  var b64data = jpgContent.substr(jpgContent.indexOf(",") + 1);
+  
+  console.log('save as');
+  saveAs(b64toBlob(b64data, "image/jpg"), filename || "network.jpg");
+};
+
+// Helper functions Start
+// see http://stackoverflow.com/questions/16245767/creating-a-blob-from-a-base64-string-in-javascript
+function b64toBlob(b64Data, contentType, sliceSize) {
+  contentType = contentType || '';
+  sliceSize = sliceSize || 512;
+
+  var byteCharacters = atob(b64Data);
+  var byteArrays = [];
+
+  for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+    var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+    var byteNumbers = new Array(slice.length);
+    for (var i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+
+    var byteArray = new Uint8Array(byteNumbers);
+
+    byteArrays.push(byteArray);
+  }
+
+  var blob = new Blob(byteArrays, {type: contentType});
+  return blob;
+}
 
 // The methods below actually belongs to graph reader but they are copied here as well
 // (with a little change) to test extra layout on rendered graphs
